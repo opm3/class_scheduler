@@ -1,0 +1,53 @@
+<?php
+
+function class_scheduler_schema() {
+  $schema['class_scheduler'] = array(
+    // Example (partial) specification for table "node".
+    'description' => 'The base table for class schedules.',
+    'fields' => array(
+      'csid' => array(
+        'description' => 'The primary identifier for a course.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'username' => array(
+        'description' => 'Username of student.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'class_timeslot' => array(
+        'description' => 'The title of this node, always treated as non-markup plain text.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'class_subject' => array(
+        'description' => 'The title of this node, always treated as non-markup plain text.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'class_topic' => array(
+        'description' => 'The title of this node, always treated as non-markup plain text.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'unique keys' => array(
+      'csid' => array(
+        'csid',
+      ),
+    ),
+    'primary key' => array(
+      'csid',
+    ),
+  );
+  return $schema;
+}

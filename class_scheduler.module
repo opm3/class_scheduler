@@ -1,0 +1,358 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function class_scheduler_menu() {
+  $items = [];
+
+  $items['class'] = [
+    'title' => t('Class Scheduler'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['class_scheduler_course_form'],
+    'access callback' => TRUE,
+  ];
+
+  return $items;
+}
+
+function get_course_info() {
+  $course_info = [
+    'math' => [
+      'algebra' => [
+        '8:00am',
+        '11:00am',
+      ],
+      'trigonometry' => [
+        '9:00am',
+        '12:00pm',
+      ],
+      'calculus' => [
+        '10:00am',
+        '3:00pm',
+      ],
+    ],
+    'art' => [
+      'art_history' => [
+        '11:00am',
+      ],
+      'painting' => [
+        '2:00pm',
+      ],
+      'drawing' => [
+        '8:00am',
+        '5:00am',
+      ],
+    ],
+    'language_arts' => [
+      'literature' => [
+        '8:30am',
+        '11:45am',
+      ],
+      'grammar' => [
+        '8:00am',
+        '9:00am',
+        '10:00am',
+        '11:00am',
+        '1:00pm',
+      ],
+      'writing' => [
+        '8:00am',
+        '11:00am',
+      ],
+    ],
+    'science' => [
+      'physics' => [
+        '10:00am',
+        '3:00pm',
+      ],
+      'chemistry' => [
+        '9:00am',
+        '1:00pm',
+      ],
+      'biology' => [
+        '8:00am',
+        '10:00am',
+      ],
+    ],
+  ];
+
+  return $course_info;
+}
+
+/**
+ * Page callback for /class.
+ */
+function class_scheduler_course_form($form, &$form_state) {
+  $username = variable_get('username', null);
+  if (isset($username)) {
+    $courses = db_query('SELECT * FROM class_scheduler WHERE username LIKE \'%' . $username . '%\' ORDER BY STR_TO_DATE(class_timeslot, "%h.%i%p") DESC')->fetchAll();
+    $schedule = create_schedule_table($courses);
+  } else {
+    $schedule = '';
+  }
+  $class_info = get_course_info();
+
+  $form['username'] = [
+    '#type' => 'textfield',
+    '#title' => t('Username'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('username', ''),
+  ];
+  $form['email'] = [
+    '#type' => 'textfield',
+    '#title' => t('Email'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('email', ''),
+  ];
+  $form['student_id'] = [
+    '#type' => 'textfield',
+    '#title' => t('Student ID'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('student_id', ''),
+  ];
+
+  // Class subject options.
+  $class_subjects = [
+    'math' => t('Math'),
+    'science' => t('Science'),
+    'art' => t('Art'),
+    'language_arts' => t('Language Arts'),
+  ];
+  // Class topics options.
+  $class_topics_math = [
+    'algebra' => t('Algebra'),
+    'trigonometry' => t('Trigonomery'),
+    'calculus' => t('Calculus'),
+  ];
+  $class_topics_science = [
+    'physics' => t('Physics'),
+    'chemistry' => t('Chemistry'),
+    'biology' => t('Biology'),
+  ];
+  $class_topics_art = [
+    'art_history' => t('Art History'),
+    'painting' => t('Painting'),
+    'drawing' => t('Drawing'),
+  ];
+  $class_topics_language_arts = [
+    'literature' => t('Literature'),
+    'grammar' => t('Grammar'),
+    'writing' => t('Writing'),
+  ];
+  $class_timeslots_math = $class_info['math'];
+  $class_timeslots_art = $class_info['art'];
+  $class_timeslots_science = $class_info['science'];
+  $class_timeslots_language_arts = $class_info['language_arts'];
+
+  $form['class_subject'] = [
+    '#type' => 'select',
+    '#title' => t('Class Subject'),
+    '#options' => $class_subjects,
+    '#description' => t('Choose a class subject.'),
+    '#required' => TRUE,
+  ];
+  $form['class_topic_math'] = [
+    '#type' => 'select',
+    '#title' => t('Class Topic'),
+    '#options' => $class_topics_math,
+    '#description' => t('Choose a class topic.'),
+    '#required' => TRUE,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="class_subject"]' => array(
+          'value' => 'math',
+        ),
+      ),
+      'required' => array(
+        ':input[name="class_subject"]' => array(
+          'value' => 'math',
+        ),
+      ),
+    ),
+  ];
+  $form['class_topic_science'] = [
+    '#type' => 'select',
+    '#title' => t('Class Topic'),
+    '#options' => $class_topics_science,
+    '#description' => t('Choose a class topic.'),
+    '#required' => TRUE,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="class_subject"]' => array(
+          'value' => 'science',
+        ),
+      ),
+      'required' => array(
+        ':input[name="class_subject"]' => array(
+          'value' => 'science',
+        ),
+      ),
+    ),
+  ];
+  $form['class_topic_art'] = [
+    '#type' => 'select',
+    '#title' => t('Class Topic'),
+    '#options' => $class_topics_art,
+    '#description' => t('Choose a class topic.'),
+    '#required' => TRUE,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="class_subject"]' => array(
+          'value' => 'art',
+        ),
+      ),
+      'required' => array(
+        ':input[name="class_subject"]' => array(
+          'value' => 'art',
+        ),
+      ),
+    ),
+  ];
+  $form['class_topic_language_arts'] = [
+    '#type' => 'select',
+    '#title' => t('Class Topic'),
+    '#options' => $class_topics_language_arts,
+    '#description' => t('Choose a class topic.'),
+    '#required' => TRUE,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="class_subject"]' => array(
+          'value' => 'language_arts',
+        ),
+      ),
+      'required' => array(
+        ':input[name="class_subject"]' => array(
+          'value' => 'language_arts',
+        ),
+      ),
+    ),
+  ];
+  // If class subject is N then display Y.
+  $class_subjects_conditional = [
+    'subjects' => t('Subjects'),
+  ];
+  $form['class_subject_conditional'] = [
+    '#type' => 'select',
+    '#title' => t('Class Subject'),
+    '#options' => $class_subjects_conditional,
+    '#description' => t('Choose a class subject.'),
+    //'#required' => TRUE,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="class_subject"]' => array(
+          'value' => 'math',
+        ),
+      ),
+      'required' => array(
+        ':input[name="class_subject"]' => array(
+          'value' => 'math',
+        ),
+      ),
+    ),
+  ];
+  // If class subject is N then display Y.
+  $class_timeslots = [
+    '8:00am' => t('8:00AM'),
+    '11:00am' => t('11:00AM'),
+  ];
+  $form['class_timeslot'] = [
+    '#type' => 'select',
+    '#title' => t('Class Timeslot'),
+    '#options' => $class_timeslots_math['algebra'],
+    '#description' => t('Choose a class timeslot.'),
+    '#required' => TRUE,
+    '#states' => [
+      'visible' => [
+        ':input[name="class_topic_math"]' => [
+          'value' => 'algebra',
+        ],
+      ],
+      'required' => [
+        ':input[name="class_topic_math"]' => [
+          'value' => 'algebra',
+        ],
+      ],
+    ],
+  ];
+  $form['submit'] = [
+    '#type' => 'submit',
+    '#value' => t('Add Class'),
+  ];
+  $form['schedule_output'] = [
+    '#type' => 'markup',
+    '#markup' => $schedule,
+  ];
+
+  return $form;
+}
+
+function class_scheduler_page_alter(&$page) {
+  $time = get_course_info();
+  dpm(array_keys($time['math']));
+}
+
+/**
+ * Form validation for class schedule form.
+ */
+function class_scheduler_course_form_validate($form, &$form_state) {
+  $timeslots = db_query('SELECT username, class_timeslot FROM class_scheduler')->fetchAll();
+  if (!valid_email_address($form_state['values']['email'])) {
+    form_set_error('email', t('Not a valid email address.'));
+  }
+  if (!preg_match('"^[a-zA-Z0-9]*$"', $form_state['values']['username'])) {
+    form_set_error('username', t('Usernames can only contain letters and numbers (alphanumeric).'));
+  }
+  // If that timeslot is already in use for that username, throw error.
+  foreach ($timeslots as $timeslot) {
+    if ($timeslot->username == $form_state['values']['username'] && $timeslot->class_timeslot == $form_state['values']['class_timeslot']) {
+      form_set_error('class_timeslot', t('You have already selected a class for that time.'));
+    }
+  }
+};
+
+/**
+ * Custom submit handler.
+ */
+function class_scheduler_course_form_submit($form, &$form_state) {
+  $val = $form_state['values'];
+  $subject = $val['class_subject'];
+
+  db_insert('class_scheduler') // Table name no longer needs {}
+    ->fields(array(
+      'username' => check_plain($val['username']),
+      'class_timeslot' => check_plain($val['class_timeslot_' . $subject]),
+      'class_subject' => check_plain($val['class_subject_' . $subject]),
+      'class_topic' => check_plain($val['class_topic_' . $subject]),
+    ))
+    ->execute();
+
+  variable_set('username', check_plain($val['username']));
+  variable_set('email', check_plain($val['email']));
+  variable_set('student_id', check_plain($val['student_id']));
+
+  drupal_set_message(t('Class has been successfully added to your schedule.'));
+}
+
+function create_schedule_table($courses) {
+  $output = '';
+  $username = variable_get('username', '');
+  $email = variable_get('email', '');
+  $student_id = variable_get('student_id', '');
+
+  $output .= '<br><br>';
+  $output .= '<h2>Username: <strong>' . $username  . '</strong><br>';
+  $output .= 'Email: <strong>' . $email  . '</strong><br>';
+  $output .= 'Student ID: <strong>' . $student_id . '</strong></h2>';
+  $output .= '<table>';
+
+  foreach ($courses as $course) {
+    $output .= '<tr><td>' . $course->class_subject . '</td>';
+    $output .= '<td>' . $course->class_topic . '</td>';
+    $output .= '<td>' . $course->class_timeslot . '</td></tr>';
+  }
+
+  $output .= '</table>';
+
+  return $output;
+}
