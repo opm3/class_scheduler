@@ -16,68 +16,139 @@ function class_scheduler_menu() {
   return $items;
 }
 
-function get_course_info() {
-  $course_info = [
-    'math' => [
-      'algebra' => [
-        '8:00am',
-        '11:00am',
-      ],
-      'trigonometry' => [
-        '9:00am',
-        '12:00pm',
-      ],
-      'calculus' => [
-        '10:00am',
-        '3:00pm',
-      ],
-    ],
-    'art' => [
-      'art_history' => [
-        '11:00am',
-      ],
-      'painting' => [
-        '2:00pm',
-      ],
-      'drawing' => [
-        '8:00am',
-        '5:00am',
-      ],
-    ],
-    'language_arts' => [
-      'literature' => [
-        '8:30am',
-        '11:45am',
-      ],
-      'grammar' => [
-        '8:00am',
-        '9:00am',
-        '10:00am',
-        '11:00am',
-        '1:00pm',
-      ],
-      'writing' => [
-        '8:00am',
-        '11:00am',
-      ],
-    ],
-    'science' => [
-      'physics' => [
-        '10:00am',
-        '3:00pm',
-      ],
-      'chemistry' => [
-        '9:00am',
-        '1:00pm',
-      ],
-      'biology' => [
-        '8:00am',
-        '10:00am',
-      ],
-    ],
-  ];
+function _get_course_subject() {
+  // drupal_map_assoc() just makes an array('String' => 'String'...).
+  return drupal_map_assoc(
+    array(
+      t('Math'),
+      t('Science'),
+      t('Art'),
+      t('Language Arts'),
+    )
+  );
+}
 
-  return $course_info;
+function _get_course_topic($key = '') {
+  $course_info = array(
+    t('Math') => drupal_map_assoc(
+      array(
+        t('Algebra'),
+        t('Trigonometry'),
+        t('Calculus'),
+      )
+    ),
+    t('Science') => drupal_map_assoc(
+      array(
+        t('Physics'),
+        t('Chemistry'),
+        t('Biology'),
+      )
+    ),
+    t('Art') => drupal_map_assoc(
+      array(
+        t('Art History'),
+        t('Painting'),
+        t('Drawing'),
+      )
+    ),
+    t('Language Arts') => drupal_map_assoc(
+      array(
+        t('Literature'),
+        t('Grammar'),
+        t('Writing'),
+      )
+    ),
+  );
+  if (isset($course_info[$key])) {
+    return $course_info[$key];
+  }
+  else {
+    return array();
+  }
+}
+
+function _get_course_timeslot($key = '') {
+  $course_info = array(
+    t('Algebra') => drupal_map_assoc(
+      array(
+        t('8:00am'),
+        t('11:00am'),
+      )
+    ),
+    t('Trigonometry') => drupal_map_assoc(
+      array(
+        t('9:00am'),
+        t('12:00pm'),
+      )
+    ),
+    t('Calculus') => drupal_map_assoc(
+      array(
+        t('10:00am'),
+        t('3:00pm'),
+      )
+    ),
+    t('Physics') => drupal_map_assoc(
+      array(
+        t('10:00am'),
+        t('3:00pm'),
+      )
+    ),
+    t('Chemistry') => drupal_map_assoc(
+      array(
+        t('9:00am'),
+        t('1:00pm'),
+      )
+    ),
+    t('Biology') => drupal_map_assoc(
+      array(
+        t('8:00am'),
+        t('10:00am'),
+      )
+    ),
+    t('Art History') => drupal_map_assoc(
+      array(
+        t('11:00am'),
+      )
+    ),
+    t('Painting') => drupal_map_assoc(
+      array(
+        t('2:00pm'),
+      )
+    ),
+    t('Drawing') => drupal_map_assoc(
+      array(
+        t('8:00am'),
+        t('5:00pm'),
+      )
+    ),
+    t('Literature') => drupal_map_assoc(
+      array(
+        t('8:30am'),
+        t('11:45am'),
+      )
+    ),
+    t('Grammar') => drupal_map_assoc(
+      array(
+        t('8:00am'),
+        t('9:00am'),
+        t('10:00am'),
+        t('11:00am'),
+        t('1:00pm'),
+      )
+    ),
+    t('Writing') => drupal_map_assoc(
+      array(
+        t('8:00am'),
+        t('11:00am'),
+      )
+    ),
+  );
+  if (isset($course_info[$key])) {
+    return $course_info[$key];
+  }
+  else {
+    return array();
+  }
 }
 
 /**
@@ -86,12 +157,14 @@ function get_course_info() {
 function class_scheduler_course_form($form, &$form_state) {
   $username = variable_get('username', null);
   if (isset($username)) {
-    $courses = db_query('SELECT * FROM class_scheduler WHERE username LIKE \'%' . $username . '%\' ORDER BY STR_TO_DATE(class_timeslot, "%h.%i%p") DESC')->fetchAll();
+    $courses = db_query('SELECT * FROM class_scheduler WHERE username LIKE \'%' . $username . '%\' ORDER BY STR_TO_DATE(class_timeslot, \'%h.%i%p\') DESC')->fetchAll();
     $schedule = create_schedule_table($courses);
   } else {
     $schedule = '';
   }
-  $class_info = get_course_info();
+  $options_first = _get_course_subject();
+  $selected = isset($form_state['values']['class_subject']) ? $form_state['values']['class_subject'] : key($options_first);
+  $selected_second = isset($form_state['values']['class_topic']) ? $form_state['values']['class_topic'] : key($options_first);
 
   $form['username'] = [
     '#type' => 'textfield',
@@ -112,123 +185,43 @@ function class_scheduler_course_form($form, &$form_state) {
     '#default_value' => variable_get('student_id', ''),
   ];
 
-  // Class subject options.
-  $class_subjects = [
-    'math' => t('Math'),
-    'science' => t('Science'),
-    'art' => t('Art'),
-    'language_arts' => t('Language Arts'),
-  ];
-  // Class topics options.
-  $class_topics_math = [
-    'algebra' => t('Algebra'),
-    'trigonometry' => t('Trigonomery'),
-    'calculus' => t('Calculus'),
-  ];
-  $class_topics_science = [
-    'physics' => t('Physics'),
-    'chemistry' => t('Chemistry'),
-    'biology' => t('Biology'),
-  ];
-  $class_topics_art = [
-    'art_history' => t('Art History'),
-    'painting' => t('Painting'),
-    'drawing' => t('Drawing'),
-  ];
-  $class_topics_language_arts = [
-    'literature' => t('Literature'),
-    'grammar' => t('Grammar'),
-    'writing' => t('Writing'),
-  ];
-  $class_timeslots_math = $class_info['math'];
-  $class_timeslots_art = $class_info['art'];
-  $class_timeslots_science = $class_info['science'];
-  $class_timeslots_language_arts = $class_info['language_arts'];
-
   $form['class_subject'] = [
     '#type' => 'select',
     '#title' => t('Class Subject'),
-    '#options' => $class_subjects,
+    '#options' => $options_first,
+    '#default_value' => $selected,
     '#description' => t('Choose a class subject.'),
     '#required' => TRUE,
-  ];
-  $form['class_topic_math'] = [
-    '#type' => 'select',
-    '#title' => t('Class Topic'),
-    '#options' => $class_topics_math,
-    '#description' => t('Choose a class topic.'),
-    '#required' => TRUE,
-    '#states' => array(
-      'visible' => array(
-        ':input[name="class_subject"]' => array(
-          'value' => 'math',
-        ),
-      ),
-      'required' => array(
-        ':input[name="class_subject"]' => array(
-          'value' => 'math',
-        ),
-      ),
+    '#ajax' => array(
+      'callback' => 'ajax_class_scheduler_callback',
+      'wrapper' => 'dropdown-second-replace',
     ),
   ];
-  $form['class_topic_science'] = [
+  $form['class_topic'] = [
     '#type' => 'select',
     '#title' => t('Class Topic'),
-    '#options' => $class_topics_science,
     '#description' => t('Choose a class topic.'),
     '#required' => TRUE,
-    '#states' => array(
-      'visible' => array(
-        ':input[name="class_subject"]' => array(
-          'value' => 'science',
-        ),
-      ),
-      'required' => array(
-        ':input[name="class_subject"]' => array(
-          'value' => 'science',
-        ),
-      ),
-    ),
-  ];
-  $form['class_topic_art'] = [
-    '#type' => 'select',
-    '#title' => t('Class Topic'),
-    '#options' => $class_topics_art,
-    '#description' => t('Choose a class topic.'),
-    '#required' => TRUE,
-    '#states' => array(
-      'visible' => array(
-        ':input[name="class_subject"]' => array(
-          'value' => 'art',
-        ),
-      ),
-      'required' => array(
-        ':input[name="class_subject"]' => array(
-          'value' => 'art',
-        ),
-      ),
-    ),
-  ];
-  $form['class_topic_language_arts'] = [
-    '#type' => 'select',
-    '#title' => t('Class Topic'),
-    '#options' => $class_topics_language_arts,
-    '#description' => t('Choose a class topic.'),
-    '#required' => TRUE,
-    '#states' => array(
-      'visible' => array(
-        ':input[name="class_subject"]' => array(
-          'value' => 'language_arts',
-        ),
-      ),
-      'required' => array(
-        ':input[name="class_subject"]' => array(
-          'value' => 'language_arts',
-        ),
-      ),
+    '#prefix' => '<div id="dropdown-second-replace">',
+    '#suffix' => '</div>',
+    '#options' => _get_course_topic($selected),
+    '#ajax' => array(
+      'callback' => 'ajax_class_scheduler_callback_timeslot',
+      'wrapper' => 'dropdown-third-replace',
     ),
   ];
   // If class subject is N then display Y.
+  $form['class_timeslot'] = [
+    '#type' => 'select',
+    '#title' => t('Class Timeslot'),
+    '#options' => _get_course_timeslot($selected_second),
+    '#description' => t('Choose a class timeslot.'),
+    '#required' => TRUE,
+    '#prefix' => '<div id="dropdown-third-replace">',
+    '#suffix' => '</div>',
+  ];
+  /*
+  // Not sure why we'd need two sets of class subjects?
   $class_subjects_conditional = [
     'subjects' => t('Subjects'),
   ];
@@ -238,43 +231,8 @@ function class_scheduler_course_form($form, &$form_state) {
     '#options' => $class_subjects_conditional,
     '#description' => t('Choose a class subject.'),
     //'#required' => TRUE,
-    '#states' => array(
-      'visible' => array(
-        ':input[name="class_subject"]' => array(
-          'value' => 'math',
-        ),
-      ),
-      'required' => array(
-        ':input[name="class_subject"]' => array(
-          'value' => 'math',
-        ),
-      ),
-    ),
   ];
-  // If class subject is N then display Y.
-  $class_timeslots = [
-    '8:00am' => t('8:00AM'),
-    '11:00am' => t('11:00AM'),
-  ];
-  $form['class_timeslot'] = [
-    '#type' => 'select',
-    '#title' => t('Class Timeslot'),
-    '#options' => $class_timeslots_math['algebra'],
-    '#description' => t('Choose a class timeslot.'),
-    '#required' => TRUE,
-    '#states' => [
-      'visible' => [
-        ':input[name="class_topic_math"]' => [
-          'value' => 'algebra',
-        ],
-      ],
-      'required' => [
-        ':input[name="class_topic_math"]' => [
-          'value' => 'algebra',
-        ],
-      ],
-    ],
-  ];
+   */
   $form['submit'] = [
     '#type' => 'submit',
     '#value' => t('Add Class'),
@@ -287,9 +245,16 @@ function class_scheduler_course_form($form, &$form_state) {
   return $form;
 }
 
+function ajax_class_scheduler_callback($form, $form_state) {
+  return $form['class_topic'];
+}
+
+function ajax_class_scheduler_callback_timeslot($form, $form_state) {
+  return $form['class_timeslot'];
+}
+
 function class_scheduler_page_alter(&$page) {
-  $time = get_course_info();
-  dpm(array_keys($time['math']));
+
 }
 
 /**
@@ -316,14 +281,13 @@ function class_scheduler_course_form_validate($form, &$form_state) {
  */
 function class_scheduler_course_form_submit($form, &$form_state) {
   $val = $form_state['values'];
-  $subject = $val['class_subject'];
 
   db_insert('class_scheduler') // Table name no longer needs {}
     ->fields(array(
       'username' => check_plain($val['username']),
-      'class_timeslot' => check_plain($val['class_timeslot_' . $subject]),
-      'class_subject' => check_plain($val['class_subject_' . $subject]),
-      'class_topic' => check_plain($val['class_topic_' . $subject]),
+      'class_timeslot' => check_plain($val['class_timeslot']),
+      'class_subject' => check_plain($val['class_subject']),
+      'class_topic' => check_plain($val['class_topic']),
     ))
     ->execute();
 
