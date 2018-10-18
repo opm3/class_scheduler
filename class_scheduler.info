@@ -1,3 +1,5 @@
 name = Class Scheduler
+description = TAG challenge.
+version = 7.x-1.0
 core = 7.x
 package = Owen Morrill

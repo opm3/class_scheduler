@@ -1,18 +1,22 @@
 <?php
 
 /**
+ * @file
+ *
+ * This module provides a page where students can schedule classes.
+ */
+
+/**
  * Implements hook_menu().
  */
 function class_scheduler_menu() {
   $items = [];
-
   $items['class'] = [
     'title' => t('Class Scheduler'),
     'page callback' => 'drupal_get_form',
     'page arguments' => ['class_scheduler_course_form'],
     'access callback' => TRUE,
   ];
-
   return $items;
 }
 
@@ -184,12 +188,10 @@ function class_scheduler_course_form($form, &$form_state) {
     '#required' => TRUE,
     '#default_value' => variable_get('student_id', ''),
   ];
-
   $form['class_subject'] = [
     '#type' => 'select',
     '#title' => t('Class Subject'),
     '#options' => $options_first,
-    '#default_value' => $selected,
     '#description' => t('Choose a class subject.'),
     '#required' => TRUE,
     '#ajax' => array(
@@ -220,19 +222,6 @@ function class_scheduler_course_form($form, &$form_state) {
     '#prefix' => '<div id="dropdown-third-replace">',
     '#suffix' => '</div>',
   ];
-  /*
-  // Not sure why we'd need two sets of class subjects?
-  $class_subjects_conditional = [
-    'subjects' => t('Subjects'),
-  ];
-  $form['class_subject_conditional'] = [
-    '#type' => 'select',
-    '#title' => t('Class Subject'),
-    '#options' => $class_subjects_conditional,
-    '#description' => t('Choose a class subject.'),
-    //'#required' => TRUE,
-  ];
-   */
   $form['submit'] = [
     '#type' => 'submit',
     '#value' => t('Add Class'),
@@ -251,10 +240,6 @@ function ajax_class_scheduler_callback($form, $form_state) {
 
 function ajax_class_scheduler_callback_timeslot($form, $form_state) {
   return $form['class_timeslot'];
-}
-
-function class_scheduler_page_alter(&$page) {
-
 }
 
 /**
@@ -308,7 +293,7 @@ function create_schedule_table($courses) {
   $output .= '<h2>Username: <strong>' . $username  . '</strong><br>';
   $output .= 'Email: <strong>' . $email  . '</strong><br>';
   $output .= 'Student ID: <strong>' . $student_id . '</strong></h2>';
-  $output .= '<table>';
+  $output .= '<table style="width:100%;"><tr><th>Class Subject</th><th>Class Topic</th><th>Class Timeslot</th></tr>';
 
   foreach ($courses as $course) {
     $output .= '<tr><td>' . $course->class_subject . '</td>';
